@@ -1,0 +1,38 @@
+server:
+  port: 8888
+  servlet:
+    encoding:
+      charset: UTF-8
+      force-response: true
+    session:
+      timeout: 24h
+spring:
+  application:
+    name: fabricSDK
+  datasource:
+    url: jdbc:mysql://10.176.24.35:3306/blockChain?createDatabaseIfNotExist=false&UseUnicode=true&characterEncoding=utf8&characterSetResults=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL57Dialect
+        show_sql: true
+        format_sql: true
+
+
+path:
+  base: "/root/fabric-samples/test-network/"
+  ccp: "${path.base}organizations/peerOrganizations/org1.example.com/connection-org1.json"
+  pk: "${path.base}organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/priv_sk"
+  certification: "${path.base}organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/User1@org1.example.com-cert.pem"
+
+#logging:
+#  file:
+#    name: fabricSDK.log

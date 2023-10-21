@@ -18,10 +18,14 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
+            <groupId>org.springframework.boot</groupId>     
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.7.4</version>
+        </dependency>
         <dependency>
             <groupId>org.hyperledger.fabric-sdk-java</groupId>
             <artifactId>fabric-sdk-java</artifactId>

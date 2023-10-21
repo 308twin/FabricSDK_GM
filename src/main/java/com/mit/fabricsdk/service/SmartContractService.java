@@ -121,9 +121,16 @@ public class SmartContractService {
                     platformTypeStatMap.put("BLOCKNUM", new HashMap<String, String>());
                     platformTypeStatMap.get("BLOCKNUM").put("BLOCKNUM", "0");
 
-                    String ccpPath = new String("/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org+".example.com/" +"connection-"+org+".json");
-                    String certPath = new String("/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org + ".example.com/"+"users/Admin@"+org+".example.com/msp/signcerts/Admin@"+org+".example.com-cert.pem");
-                    String pkPath = new String("/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org + ".example.com/"+"users/Admin@"+org+".example.com/msp/keystore/priv_sk");
+                    String ccpPath = new String(
+                            "/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org
+                                    + ".example.com/" + "connection-" + org + ".json");
+                    String certPath = new String(
+                            "/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org
+                                    + ".example.com/" + "users/Admin@" + org + ".example.com/msp/signcerts/Admin@" + org
+                                    + ".example.com-cert.pem");
+                    String pkPath = new String(
+                            "/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org
+                                    + ".example.com/" + "users/Admin@" + org + ".example.com/msp/keystore/priv_sk");
 
                     // String ccpPath = new String("/home/mx-storage/fabric-config/" + org
                     // + "/fabric/organizations/peerOrganizations/" + org + ".example.com/" + org +
@@ -475,6 +482,20 @@ public class SmartContractService {
                     })
                     .collect(Collectors.toList());
         });
+    }
+
+    public String addSecondaryData(SecondaryData data, Contract contract, String eventName) {
+        String sequence = data.getSequence();
+        try {
+          
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonString = objectMapper.writeValueAsString(data);
+            contract.submitTransaction(eventName, jsonString);
+             return sequence + " added at " + Instant.now().toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return sequence + "failed to added at " + Instant.now().toString();
+        }
     }
 
 }

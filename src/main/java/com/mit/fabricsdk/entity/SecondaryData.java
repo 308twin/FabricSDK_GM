@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class SecondaryData {
     private String sequence;
     private String message;

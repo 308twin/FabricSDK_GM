@@ -93,6 +93,22 @@ public class SmartContractService {
         return list;
     }
 
+    @SneakyThrows
+    public Object querySecondaryContract(Contract contract, String... args) throws Exception {
+        byte[] bt1 = contract.evaluateTransaction(args[0], removeFirstElement(args));
+        String jsonString = new String(bt1);
+
+        Object jsonContent;
+        if (jsonString.startsWith("{")) {
+            jsonContent = JSONObject.parseObject(jsonString);
+        } else if (jsonString.startsWith("[")) {
+            jsonContent = JSONArray.parseArray(jsonString);
+        } else {
+            throw new Exception("Invalid JSON content");
+        }
+        return jsonContent;
+    }
+
     public void initBlockChain() {
         List<BlockChainChannel> channels = (List<BlockChainChannel>) channelDao.findAll();
         logger.info(channels.toString());
@@ -487,11 +503,11 @@ public class SmartContractService {
     public String addSecondaryData(SecondaryData data, Contract contract, String eventName) {
         String sequence = data.getSequence();
         try {
-          
+
             ObjectMapper objectMapper = new ObjectMapper();
             String jsonString = objectMapper.writeValueAsString(data);
             contract.submitTransaction(eventName, jsonString);
-             return sequence + " added at " + Instant.now().toString();
+            return sequence + " added at " + Instant.now().toString();
         } catch (Exception e) {
             e.printStackTrace();
             return sequence + "failed to added at " + Instant.now().toString();

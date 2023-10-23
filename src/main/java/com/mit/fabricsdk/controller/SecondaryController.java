@@ -113,8 +113,8 @@ public class SecondaryController {
     @ApiOperation("查找二级数据")
     public BaseResponse<Object> searchScondary(@RequestBody @Valid SearchSecondaryRequest request) {
         try {
-            List<Map<String, Object>> res = smartContractService
-                    .queryContract(
+           Object res = smartContractService
+                    .querySecondaryContract(
                             channelInfo.getGatewayMap().get(request.getChannelName())
                                     .getNetwork(request.getChannelName()).getContract(request.getContractName()),
                             request.toJSONString());

@@ -24,13 +24,13 @@ public interface SecondaryComparisonDao extends PagingAndSortingRepository<Secon
         return findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (channelName != null) {
+            if (channelName != null&&!channelName.isEmpty()) {
                 predicates.add(cb.equal(root.get("channelName"), channelName));
             }
-            if (contractName != null) {
+            if (contractName != null && !contractName.isEmpty()) {
                 predicates.add(cb.equal(root.get("contractName"), contractName));
             }
-            if (sequence != null) {
+            if (sequence != null&& !sequence.isEmpty()) {
                 predicates.add(cb.equal(root.get("sequence"), sequence));
             }
             if (generationTimeFrom != null) {
@@ -39,7 +39,7 @@ public interface SecondaryComparisonDao extends PagingAndSortingRepository<Secon
             if (generationTimeTo != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("generationTime"), generationTimeTo));
             }
-            if (type != null) {
+            if (type != null && type!=0) {
                 predicates.add(cb.equal(root.get("type"), type));
             }
 
@@ -53,13 +53,31 @@ public interface SecondaryComparisonDao extends PagingAndSortingRepository<Secon
         return findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (channelName != null) {
+            // if (channelName != null) {
+            //     predicates.add(cb.equal(root.get("channelName"), channelName));
+            // }
+            // if (contractName != null) {
+            //     predicates.add(cb.equal(root.get("contractName"), contractName));
+            // }
+            // if (sequence != null) {
+            //     predicates.add(cb.equal(root.get("sequence"), sequence));
+            // }
+            // if (generationTimeFrom != null) {
+            //     predicates.add(cb.greaterThanOrEqualTo(root.get("generationTime"), generationTimeFrom));
+            // }
+            // if (generationTimeTo != null) {
+            //     predicates.add(cb.lessThanOrEqualTo(root.get("generationTime"), generationTimeTo));
+            // }
+            // if (type != null&&type!=0) {
+            //     predicates.add(cb.equal(root.get("type"), type));
+            // }
+            if (channelName != null&&!channelName.isEmpty()) {
                 predicates.add(cb.equal(root.get("channelName"), channelName));
             }
-            if (contractName != null) {
+            if (contractName != null && !contractName.isEmpty()) {
                 predicates.add(cb.equal(root.get("contractName"), contractName));
             }
-            if (sequence != null) {
+            if (sequence != null&& !sequence.isEmpty()) {
                 predicates.add(cb.equal(root.get("sequence"), sequence));
             }
             if (generationTimeFrom != null) {
@@ -68,7 +86,7 @@ public interface SecondaryComparisonDao extends PagingAndSortingRepository<Secon
             if (generationTimeTo != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("generationTime"), generationTimeTo));
             }
-            if (type != null&&type!=0) {
+            if (type != null && type!=0) {
                 predicates.add(cb.equal(root.get("type"), type));
             }
             return cb.and(predicates.toArray(new Predicate[0]));

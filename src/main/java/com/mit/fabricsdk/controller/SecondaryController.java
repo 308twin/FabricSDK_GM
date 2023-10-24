@@ -83,7 +83,7 @@ public class SecondaryController {
                             return sequence + " added at " + Instant.now().toString();
                         } catch (Exception e) {
                             e.printStackTrace();
-                            return sequence + "failed to added at " + Instant.now().toString();
+                            return sequence + " failed to added at " + Instant.now().toString()+" caused by "+e.toString() ;
                         }
                     }
                 });

@@ -141,6 +141,7 @@ public class SecondaryController {
             secondaryData.setTampering(request.getTampering());
             secondaryData.setRecieveMessage(request.getRecieveMessage());
             secondaryData.setSendMessage(request.getSendMessage());
+            secondaryData.setContent(request.getContent());
             secondaryComparisonDao.save(secondaryData);
             return new BaseResponse<>(null, "新增成功");
         } catch (Exception e) {

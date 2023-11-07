@@ -137,16 +137,10 @@ public class SmartContractService {
                     platformTypeStatMap.put("BLOCKNUM", new HashMap<String, String>());
                     platformTypeStatMap.get("BLOCKNUM").put("BLOCKNUM", "0");
 
-                    String ccpPath = new String(
-                            "/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org
-                                    + ".example.com/" + "connection-" + org + ".json");
-                    String certPath = new String(
-                            "/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org
-                                    + ".example.com/" + "users/Admin@" + org + ".example.com/msp/signcerts/Admin@" + org
-                                    + ".example.com-cert.pem");
-                    String pkPath = new String(
-                            "/home/lhd/Fabric/fabric-samples/test-network/organizations/peerOrganizations/" + org
-                                    + ".example.com/" + "users/Admin@" + org + ".example.com/msp/keystore/priv_sk");
+                    String ccpPath = new String("/home/mx-storage/fabric-config/" + org + "/fabric/organizations/peerOrganizations/" + org + ".example.com/"+org+"_ccp.json");
+                    String certPath = new String("/home/mx-storage/fabric-config/" + org + "/fabric/organizations/peerOrganizations/" + org + ".example.com/"+"users/Admin@"+org+".example.com/msp/signcerts/cert.pem");
+                    String pkPath = new String("/home/mx-storage/fabric-config/" + org + "/fabric/organizations/peerOrganizations/" + org + ".example.com/"+"users/Admin@"+org+".example.com/msp/keystore/server.key");
+
 
                     // String ccpPath = new String("/home/mx-storage/fabric-config/" + org
                     // + "/fabric/organizations/peerOrganizations/" + org + ".example.com/" + org +

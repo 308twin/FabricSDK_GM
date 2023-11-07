@@ -102,9 +102,9 @@ public class SecondaryController {
 
             // 关闭线程池
             es.shutdown();
-            return new BaseResponse<>(results, "新增成功");
+            return new BaseResponse<>(results, "执行成功");
         } catch (Exception e) {
-            return new BaseResponse<>(e.toString(), "新增失败");
+            return new BaseResponse<>(e.toString(), "执行失败");
         }
     }
 
@@ -154,24 +154,10 @@ public class SecondaryController {
     @ApiOperation("查找二级数据比对")
     public BaseResponse<Object> searchComparison(@RequestBody @Valid SearchSecondaryComparison request) {
         try {
-            Sort sort;
-
-            if (request.getSortBy() != null && !request.getSortBy().isEmpty()) {
-                if ("desc".equalsIgnoreCase(request.getSortOrder())) {
-                    sort = Sort.by(request.getSortBy()).descending();
-                } else {
-                    sort = Sort.by(request.getSortBy()).ascending();
-                }
-            } else {
-                sort = Sort.unsorted();
-            }
-
-            Pageable pageable =  PageRequest.of(request.getPage(), request.getSize(), sort);
-
-            Page<SecondaryCompareResult> res = secondaryComparisonDao.findByMultipleFieldsWithPagination(
+            Object res = secondaryComparisonDao.findByMultipleFields(
                     request.getChannelName(), request.getContractName(), request.getSequence(),
-                    request.getGenerationTimeFrom(), request.getGenerationTimeTo(), request.getType(),pageable);
-            return new BaseResponse<>(res.getContent(), "查询成功");
+                    request.getGenerationTimeFrom(), request.getGenerationTimeTo(),request.getType());
+            return new BaseResponse<>(res, "查询成功");
         } catch (Exception e) {
             return new BaseResponse<>(e.toString(), "查询失败");
         }

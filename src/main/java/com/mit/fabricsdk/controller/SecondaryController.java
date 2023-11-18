@@ -7,6 +7,7 @@ import com.mit.fabricsdk.dao.SecondaryComparisonDao;
 import com.mit.fabricsdk.dto.request.SaveMajorRequest;
 import com.mit.fabricsdk.dto.request.SaveSecondaryComparisonRequest;
 import com.mit.fabricsdk.dto.request.SaveSecondaryRequest;
+import com.mit.fabricsdk.dto.request.SearchHackRequest;
 import com.mit.fabricsdk.dto.request.SearchMajorRequest;
 import com.mit.fabricsdk.dto.request.SearchSecondaryComparison;
 import com.mit.fabricsdk.dto.request.SearchSecondaryRequest;
@@ -14,6 +15,7 @@ import com.mit.fabricsdk.dto.response.AddResponse;
 import com.mit.fabricsdk.entity.Major;
 import com.mit.fabricsdk.entity.SecondaryCompareResult;
 import com.mit.fabricsdk.entity.SecondaryData;
+import com.mit.fabricsdk.dto.BaseRequest;
 import com.mit.fabricsdk.dto.BaseResponse;
 import com.mit.fabricsdk.service.SmartContractService;
 import com.mit.fabricsdk.utils.BuildStrArgsUtil;
@@ -164,6 +166,26 @@ public class SecondaryController {
         }
 
     }
+
+    @SneakyThrows
+    @PostMapping(value = "api/blockchain/secondaryData/searchHack", produces = "application/json")
+    @ApiOperation("二级数据攻击后前端弹窗")
+    public BaseResponse<Object> searchHack(@RequestBody @Valid SearchHackRequest request) {
+        try {
+          Timestamp now = new Timestamp(System.currentTimeMillis());
+          Timestamp fiveSecondsAgo = new Timestamp(System.currentTimeMillis() - 5000000);        
+          List<SecondaryCompareResult>  res = secondaryComparisonDao.findByStationAndTimeNative( fiveSecondsAgo, now);
+          List<SecondaryCompareResult> filteredResults = res.stream()
+    .filter(scr -> scr.getChannelName().contains(request.stationName))
+    .collect(Collectors.toList());
+          
+            return new BaseResponse<>(filteredResults, "查询成功");
+        } catch (Exception e) {
+            return new BaseResponse<>(e.toString(), "查询失败");
+        }
+
+    }
+
 
 }
 

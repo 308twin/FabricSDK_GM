@@ -10,8 +10,13 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.ArrayList;
 import java.util.List;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -92,6 +97,37 @@ public interface SecondaryComparisonDao extends PagingAndSortingRepository<Secon
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
     }
+
+    default List<SecondaryCompareResult> findByStation(String station) {
+        return findAll((root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+        // 添加条件，使channel_name列包含station
+        predicates.add(cb.like(root.get("channelName"), "%" + station + "%"));
+
+        // 添加条件，使recieveMessage不等于sendMessage
+        predicates.add(cb.notEqual(root.get("recieveMessage"), root.get("sendMessage")));
+
+       // 添加条件，使generationTime在当前时间的五秒内
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime fiveSecondsAgo = now.minusSeconds(500);
+
+        // 将LocalDateTime转换为java.util.Date
+        Date nowDate = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
+        Date fiveSecondsAgoDate = Date.from(fiveSecondsAgo.atZone(ZoneId.systemDefault()).toInstant());
+
+        // predicates.add(cb.between(root.get("generationTime"), fiveSecondsAgoDate, nowDate));
+
+        return cb.and(predicates.toArray(new Predicate[0]));
+        });
+    }
+
+    @Query(value = "SELECT * FROM secondary_compare_result WHERE recieve_message <> send_message AND generation_time BETWEEN :fiveSecondsAgo AND :now", nativeQuery = true)
+    List<SecondaryCompareResult> findByStationAndTimeNative( @Param("fiveSecondsAgo") Timestamp fiveSecondsAgo, @Param("now") Timestamp now);
+
+
+    @Query("SELECT scr FROM SecondaryCompareResult scr WHERE scr.channelName LIKE :station AND scr.recieveMessage <> scr.sendMessage AND scr.generationTime BETWEEN :fiveSecondsAgo AND :now")
+    List<SecondaryCompareResult> findByStationAndTime(@Param("station") String station, @Param("fiveSecondsAgo") Timestamp fiveSecondsAgo, @Param("now") Timestamp now);
 }
 
 // public class SecondaryCompareResultSpecification implements

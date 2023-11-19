@@ -173,7 +173,7 @@ public class SecondaryController {
     public BaseResponse<Object> searchHack(@RequestBody @Valid SearchHackRequest request) {
         try {
           Timestamp now = new Timestamp(System.currentTimeMillis());
-          Timestamp fiveSecondsAgo = new Timestamp(System.currentTimeMillis() - 5000000);        
+          Timestamp fiveSecondsAgo = new Timestamp(System.currentTimeMillis() - 5000);        
           List<SecondaryCompareResult>  res = secondaryComparisonDao.findByStationAndTimeNative( fiveSecondsAgo, now);
           List<SecondaryCompareResult> filteredResults = res.stream()
     .filter(scr -> scr.getChannelName().contains(request.stationName))

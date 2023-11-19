@@ -122,7 +122,7 @@ public interface SecondaryComparisonDao extends PagingAndSortingRepository<Secon
         });
     }
 
-    @Query(value = "SELECT * FROM secondary_compare_result WHERE recieve_message <> send_message AND generation_time BETWEEN :fiveSecondsAgo AND :now", nativeQuery = true)
+    @Query(value = "SELECT * FROM secondary_compare_result WHERE recieve_message <> send_message AND createAt BETWEEN :fiveSecondsAgo AND :now", nativeQuery = true)
     List<SecondaryCompareResult> findByStationAndTimeNative( @Param("fiveSecondsAgo") Timestamp fiveSecondsAgo, @Param("now") Timestamp now);
 
 

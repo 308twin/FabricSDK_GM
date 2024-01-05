@@ -1,0 +1,14 @@
+/**
+  * Copyright 2024 bejson.com 
+  */
+package com.mit.fabricsdk.entity.block;
+
+import lombok.Data;
+@Data
+public class Endorsements {
+
+    private String endorser;
+    private String signature;
+    
+
+}

@@ -66,23 +66,23 @@ public class CommonSchedule  {
 //        }
 //    }
 
-    @Scheduled(fixedRate = 60000)
-    public void CalculateAllCount() throws InvalidArgumentException, ProposalException {
-        List<String> channelList = new ArrayList<>();
-        logger.info("CalculateTxNum:Start");
-        for (String channelname : channelInfo.getChannelMap().keySet()){
-            logger.info("Excute CalculateTxNum");
-            long num = smartContractService.calculateTxNum(channelname);
-            HistoryTxNum entity = new HistoryTxNum();
-            entity.setNum(num);
-            entity.setChannel(channelname);
-            historyTxNumDao.save(entity);
-            logger.info("Save Transaction Count:"+ entity);
-        }
-    }
+    // @Scheduled(fixedRate = 60000)
+    // public void CalculateAllCount() throws InvalidArgumentException, ProposalException {
+    //     List<String> channelList = new ArrayList<>();
+    //     logger.info("CalculateTxNum:Start");
+    //     for (String channelname : channelInfo.getChannelMap().keySet()){
+    //         logger.info("Excute CalculateTxNum");
+    //         long num = smartContractService.calculateTxNum(channelname);
+    //         HistoryTxNum entity = new HistoryTxNum();
+    //         entity.setNum(num);
+    //         entity.setChannel(channelname);
+    //         historyTxNumDao.save(entity);
+    //         logger.info("Save Transaction Count:"+ entity);
+    //     }
+    // }
 
-    @Scheduled(fixedRate = 60000)
-    public void detectChannel(){
-        smartContractService.initBlockChain();
-    }
+    // @Scheduled(fixedRate = 60000)
+    // public void detectChannel(){
+    //     smartContractService.initBlockChain();
+    // }
 }

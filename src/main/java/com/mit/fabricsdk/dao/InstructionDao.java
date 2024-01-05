@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 
-public interface InstructionDao extends PagingAndSortingRepository<InstructionDB, Long>, JpaSpecificationExecutor<InstructionDB> {
+public interface InstructionDao extends PagingAndSortingRepository<InstructionDB, Integer>, JpaSpecificationExecutor<InstructionDB> {
   
 
 }

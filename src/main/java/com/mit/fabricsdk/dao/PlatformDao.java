@@ -9,5 +9,5 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  * @author Haodong Li
  * @date 2023年05月30日 15:41
  */
-public interface PlatformDao extends PagingAndSortingRepository<Platform, Long>, JpaSpecificationExecutor<Platform> {
+public interface PlatformDao extends PagingAndSortingRepository<Platform, Integer>, JpaSpecificationExecutor<Platform> {
 }

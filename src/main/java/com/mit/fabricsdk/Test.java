@@ -1,27 +1,29 @@
 package com.mit.fabricsdk;
 
-import com.mit.fabricsdk.entity.Major;
+import java.io.IOException;
 
-import java.util.List;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.mit.fabricsdk.utils.JsonUtil;
-import org.springframework.util.Base64Utils;
-import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.boot.SpringApplication;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
-/**
- * @author Haodong Li
- * @date 2023年05月31日 21:28
- */
+import com.mit.fabricsdk.entity.block.BlockInfo;
+import com.mit.fabricsdk.utils.BashUtil;
+import com.mit.fabricsdk.utils.K8SUtil;
+
 public class Test {
-    public static void main(String[] args) {
-        String jsonString = "[{\\\"GenerationTime\\\":\\\"2022-03-30T14:08:00Z\\\",\\\"IdentificationPoint\\\":\\\"even22t1\\\",\\\"Device\\\":\\\"dev22ice1\\\",\\\"Description\\\":\\\"description1111\\\",\\\"EventLevel\\\":\\\"level1\\\",\\\"Remark\\\":\\\"remark1\\\"},{\\\"GenerationTime\\\":\\\"2022-03-30T14:08:00Z\\\",\\\"IdentificationPoint\\\":\\\"event2\\\",\\\"Device\\\":\\\"device1\\\",\\\"Description\\\":\\\"descript221ion1\\\",\\\"EventLevel\\\":\\\"level1\\\",\\\"Remark\\\":\\\"remark1\\\"}]";
-        jsonString = jsonString.replace("\\","");
-        ObjectMapper objectMapper = new ObjectMapper();
-        TypeFactory typeFactory = objectMapper.getTypeFactory();
-        CollectionType collectionType = typeFactory.constructCollectionType(List.class, Major.class);
-        Object majors = JsonUtil.toObjectQuietly(jsonString,  Major[].class);
-        System.out.println(majors);
+    public static void main(String[] args) throws Exception{
+      
+         ObjectMapper mapper = new ObjectMapper();
+         String[] command = new String[]{"/bin/bash", "-c", "cat latest_block.json"};
+
+        try {
+            String json =  K8SUtil.excuteK8SCommand("mx","org1-admin-cli", command);
+            //System.out.println(json);
+            // System.out.println();
+             BlockInfo blockInfo = mapper.readValue(json, BlockInfo.class);
+             System.out.println(blockInfo.getMetadata());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+      
     }
 }

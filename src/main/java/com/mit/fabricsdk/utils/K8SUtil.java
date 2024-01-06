@@ -17,7 +17,7 @@ import io.kubernetes.client.util.Config;
 public class K8SUtil {
     public static V1Pod podFilter(String namespace,V1PodList list){      
         List<V1Pod> filteredPods = list.getItems().stream()
-                .filter(pod -> pod.getMetadata().getName().contains("org1-admin-cli"))
+                .filter(pod -> pod.getMetadata().getName().contains(namespace))
                 .collect(Collectors.toList());
         if(filteredPods.size()==0)
             return null;

@@ -35,6 +35,11 @@ path:
   ccp: "${path.base}organizations/peerOrganizations/org1.example.com/connection-org1.json"
   pk: "${path.base}organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/priv_sk"
   certification: "${path.base}organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/User1@org1.example.com-cert.pem"
+k8s:
+  namespace: "mx"
+  peerTail : "-peer1:7051"
+  order : "org0-orderer1:6050"
+  adminTail : "-admin-cli"
 
 #logging:
 #  file:

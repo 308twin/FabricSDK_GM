@@ -1,3 +1,13 @@
+/*
+ * @Author: LHD
+ * @Date: 2023-12-19 13:54:39
+ * @LastEditors: 308twin 790816436@qq.com
+ * @LastEditTime: 2024-01-06 23:46:07
+ * @FilePath: /FabricSDK_GM/src/main/java/com/mit/fabricsdk/controller/CommonChannelController.java
+ * @Description: 
+ * 
+ * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved. 
+ */
 package com.mit.fabricsdk.controller;
 
 import com.mit.fabricsdk.component.SmartContract;
@@ -5,6 +15,7 @@ import com.mit.fabricsdk.dto.BaseResponse;
 import com.mit.fabricsdk.dto.request.GetChainHeightRequest;
 import com.mit.fabricsdk.dto.request.InitRequest;
 import com.mit.fabricsdk.dto.request.SearchMajorRequest;
+import com.mit.fabricsdk.service.K8SBlockService;
 import com.mit.fabricsdk.service.SmartContractService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -15,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * Description: 区块链的一些通用方法
@@ -27,6 +39,9 @@ import java.util.Map;
 public class CommonChannelController {
     @Autowired
     SmartContractService smartContractService;
+
+    @Autowired
+    K8SBlockService k8sBlockService;
 
     @SneakyThrows
     @PostMapping(value = "api/blockchain/common/init",produces = "application/json")
@@ -101,4 +116,15 @@ public class CommonChannelController {
 //        Object res = smartContractService.getBlockTxCount();
 //        return new BaseResponse<>(res, "成功获取历史交易数量");
 //    }
+    @GetMapping(value = "api/blockchain/common/test", produces = "application/json")
+    public Object test() {
+        try {
+            return k8sBlockService.getBlockHeight("pingliangroadmajorchannel");
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    
 }

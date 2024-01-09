@@ -11,7 +11,7 @@ public class Channel_header {
     private String channel_id;
     private String epoch;
     private Extension extension;
-    private Date timestamp;
+    private String timestamp;
     private String tls_cert_hash;
     private String tx_id;
     private int type;

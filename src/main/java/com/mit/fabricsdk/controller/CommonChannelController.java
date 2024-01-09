@@ -2,7 +2,7 @@
  * @Author: LHD
  * @Date: 2023-12-19 13:54:39
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-09 16:34:51
+ * @LastEditTime: 2024-01-09 16:54:28
  * @FilePath: /FabricSDK_GM/src/main/java/com/mit/fabricsdk/controller/CommonChannelController.java
  * @Description: 
  * 
@@ -121,7 +121,7 @@ public class CommonChannelController {
         try {
             //return k8sBlockService.getBlockHeight("pingliangroadmajorchannel");
             //Object res =  k8sBlockService.getBlockInfo("pingliangroadmajorchannel",7L);
-            //k8sBlockService.GenerateChannelInfo();
+            k8sBlockService.GenerateChannelInfo();
             return 0;
         } catch (Exception e) {
             // TODO Auto-generated catch block

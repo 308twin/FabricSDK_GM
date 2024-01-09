@@ -2,7 +2,16 @@
  * @Author: LHD
  * @Date: 2024-01-06 12:51:51
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-09 16:39:44
+ * @LastEditTime: 2024-01-09 17:28:59
+ * @Description: 
+ * 
+ * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
+ */
+/*
+ * @Author: LHD
+ * @Date: 2024-01-06 12:51:51
+ * @LastEditors: 308twin 790816436@qq.com
+ * @LastEditTime: 2024-01-09 17:02:44
  * @Description: 
  * 
  * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
@@ -21,7 +30,10 @@ package com.mit.fabricsdk.service;
 
 
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,6 +190,24 @@ public class K8SBlockService {
 
     /**
      * @Author: LHD
+     * @Date: 2024-01-09 17:17:05
+     * @description: 获取区块生成时间
+     * @param {BlockInfo} blockInfo
+     * @return {*}
+     */    
+    public String getBlockGenerationTime(BlockInfo blockInfo){
+        String isoDateTime = blockInfo.getData().getData().get(getTransactionCount(blockInfo)-1).getPayload().getHeader().getChannel_header().getTimestamp(); 
+         // 将ISO 8601字符串解析为OffsetDateTime对象
+        OffsetDateTime odt = OffsetDateTime.parse(isoDateTime);
+
+        // 格式化日期时间为指定的格式
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDateTime = odt.format(formatter);   
+        return formattedDateTime;    
+    }
+
+    /**
+     * @Author: LHD
      * @Date: 2024-01-09 14:39:15
      * @description: 更新数据库中的channel_info
      * @return {*}
@@ -200,11 +230,15 @@ public class K8SBlockService {
                 Long height = getBlockHeight(channel.getChannelName());
                 Long txCount = 0L;
                 for (Long i = initHeight; i < height; i++) {
-                    txCount+=getTransactionCount(getBlockInfo(channel.getChannelName(),i));
+                    BlockInfo blockInfo = getBlockInfo(channel.getChannelName(),i);
+                    String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                    txCount+=getTransactionCount(blockInfo);
                     ChannelInfo channelInfo = new ChannelInfo();
                     channelInfo.setChannelName(channel.getChannelName());
                     channelInfo.setChannelHeight(i);
                     channelInfo.setChannelTxCount(txCount);
+                    channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                    channelInfo.setNewestBlockTime(blockGenerationTime);
                     channelInfoDao.save(channelInfo);
                 }
                 

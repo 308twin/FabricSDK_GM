@@ -40,6 +40,7 @@ k8s:
   peerTail : "-peer1:7051"
   order : "org0-orderer1:6050"
   adminTail : "-admin-cli"
+  cafile : "$CORE_PEER_TLS_ROOTCERT_FILE"
 
 #logging:
 #  file:

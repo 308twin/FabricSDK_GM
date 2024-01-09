@@ -1,3 +1,12 @@
+/*
+ * @Author: LHD
+ * @Date: 2023-12-19 13:54:39
+ * @LastEditors: 308twin 790816436@qq.com
+ * @LastEditTime: 2024-01-09 13:52:56
+ * @Description: 
+ * 
+ * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
+ */
 package com.mit.fabricsdk.schedule;
 
 import com.mit.fabricsdk.component.ChannelInfo;
@@ -50,21 +59,21 @@ public class CommonSchedule  {
      * @since: JDK 1.8
 
      */
-    //@Scheduled(cron = "50 59 * * * *")
-//    @Scheduled(fixedRate = 60000)
-//    public void CalculateTxNum() throws InvalidArgumentException, ProposalException {
-//        List<String> channelList = new ArrayList<>();
-//        logger.info("CalculateTxNum:Start");
-//        for (String channelname : channelInfo.getChannelMap().keySet()){
-//            logger.info("Excute CalculateTxNum");
-//           long num = smartContractService.calculateTxNum(channelname);
-//            HistoryTxNum entity = new HistoryTxNum();
-//            entity.setNum(num);
-//            entity.setChannel(channelname);
-//            historyTxNumDao.save(entity);
-//            logger.info("Save Transaction Count:"+ entity);
-//        }
-//    }
+    // @Scheduled(cron = "50 59 * * * *")
+   @Scheduled(fixedRate = 60000)
+   public void CalculateTxNum() throws InvalidArgumentException, ProposalException {
+       List<String> channelList = new ArrayList<>();
+       logger.info("CalculateTxNum:Start");
+       for (String channelname : channelInfo.getChannelMap().keySet()){
+           logger.info("Excute CalculateTxNum");
+           long num = smartContractService.calculateTxNum(channelname);
+           HistoryTxNum entity = new HistoryTxNum();
+           entity.setNum(num);
+           entity.setChannel(channelname);
+           historyTxNumDao.save(entity);
+           logger.info("Save Transaction Count:"+ entity);
+       }
+   }
 
     // @Scheduled(fixedRate = 60000)
     // public void CalculateAllCount() throws InvalidArgumentException, ProposalException {

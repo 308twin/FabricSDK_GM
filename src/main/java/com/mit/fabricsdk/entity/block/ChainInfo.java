@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class ChainInfo {
     @JsonProperty("height")
-    private Integer height;
+    private Long height;
 
     @JsonProperty("currentBlockHash")
     private String currentBlockHash;

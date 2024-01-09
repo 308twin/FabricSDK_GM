@@ -1,3 +1,12 @@
+/*
+ * @Author: LHD
+ * @Date: 2023-12-20 13:34:31
+ * @LastEditors: 308twin 790816436@qq.com
+ * @LastEditTime: 2024-01-09 13:32:48
+ * @Description: 
+ * 
+ * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
+ */
 package com.mit.fabricsdk;
 
 import java.io.IOException;
@@ -19,7 +28,7 @@ public class Test {
     public static void main(String[] args) throws Exception{
       
          ObjectMapper mapper = new ObjectMapper();
-         String[] command = new String[]{"/bin/bash", "-c", "cat latest_block.json"};
+         String[] command = new String[]{"/bin/bash", "-c", "cat latest_major.json"};
 
         try {
             String json =  K8SUtil.excuteK8SCommand("mx","org1-admin-cli", command);

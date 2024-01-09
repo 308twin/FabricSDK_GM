@@ -2,7 +2,7 @@
  * @Author: LHD
  * @Date: 2023-12-19 13:54:39
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-06 23:46:07
+ * @LastEditTime: 2024-01-09 16:34:51
  * @FilePath: /FabricSDK_GM/src/main/java/com/mit/fabricsdk/controller/CommonChannelController.java
  * @Description: 
  * 
@@ -119,7 +119,10 @@ public class CommonChannelController {
     @GetMapping(value = "api/blockchain/common/test", produces = "application/json")
     public Object test() {
         try {
-            return k8sBlockService.getBlockHeight("pingliangroadmajorchannel");
+            //return k8sBlockService.getBlockHeight("pingliangroadmajorchannel");
+            //Object res =  k8sBlockService.getBlockInfo("pingliangroadmajorchannel",7L);
+            //k8sBlockService.GenerateChannelInfo();
+            return 0;
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

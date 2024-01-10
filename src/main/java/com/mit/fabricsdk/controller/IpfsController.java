@@ -3,8 +3,8 @@
  * @Version: 2.0
  * @Author: Haodong Li
  * @Date: 2023-07-11 08:53:12
- * @LastEditors: Haodong Li
- * @LastEditTime: 2023-07-28 15:20:40
+ * @LastEditors: 308twin 790816436@qq.com
+ * @LastEditTime: 2024-01-10 16:53:45
  */
 package com.mit.fabricsdk.controller;
 
@@ -19,8 +19,11 @@ import com.mit.fabricsdk.dto.response.AddResponse;
 import com.mit.fabricsdk.entity.IpfsFileInfo;
 import com.mit.fabricsdk.entity.Major;
 import com.mit.fabricsdk.dto.BaseResponse;
+import com.mit.fabricsdk.service.K8SBlockService;
 import com.mit.fabricsdk.service.SmartContractService;
 import com.mit.fabricsdk.utils.BuildStrArgsUtil;
+import com.mit.fabricsdk.utils.K8SUtil;
+
 import javax.validation.Valid;
 
 import com.mit.fabricsdk.utils.RunableUtil;
@@ -45,6 +48,9 @@ public class IpfsController {
     SmartContractService smartContractService;
 
     @Autowired
+    K8SBlockService k8sBlockService;
+
+    @Autowired
     ChannelInfo channelInfo;
 
     /**
@@ -63,13 +69,12 @@ public class IpfsController {
             String formattedDateTime = now.format(formatter);
             request.getIpfsFileInfo().setGenerationTime(formattedDateTime);
             IpfsFileInfo ipfsFileInfo = request.getIpfsFileInfo();
-            Contract contract = channelInfo.getGatewayMap().get(request.getChannelName())
-                    .getNetwork(request.getChannelName()).getContract(request.getContractName());
+           
             ObjectMapper objectMapper = new ObjectMapper();
             String jsonString = objectMapper.writeValueAsString(ipfsFileInfo);
-            
-            RunableUtil runableUtil = new RunableUtil(contract, "AddFileInfo", jsonString);
-            runableUtil.start();
+            String submitString = k8sBlockService.buildSubmitStr("AddFileInfo", jsonString);
+            String res = k8sBlockService.submitK8S(request.getChannelName(), request.getContractName(), submitString);
+           
             return new BaseResponse<>("", "新增成功");
         } catch (Exception e) {
             System.out.println(e);
@@ -82,14 +87,8 @@ public class IpfsController {
     @ApiOperation("QueryEvents查找ipfs")
     public BaseResponse<Object> searchIpfs(@RequestBody @Valid SearchIpfsFileRequest request) {
         try {
-            if(channelInfo.getGatewayMap().get(request.getChannelName())==null)
-                throw new Exception(request.getChannelName()+"通道Gateway未能正确创建");
-            List<Map<String, Object>> res = smartContractService
-                    .queryContract(
-                            channelInfo.getGatewayMap().get(request.getChannelName())
-                                    .getNetwork(request.getChannelName()).getContract(request.getContractName()),
-                            request.toJSONString());
-            return new BaseResponse<>(res, "查询成功");
+            String res = k8sBlockService.searchK8S(request.getChannelName(), request.getContractName(), request.toChaincodeInvoke());            
+            return new BaseResponse<>(k8sBlockService.toJsonObject(res), "查询成功");
         } catch (Exception e) {
             return new BaseResponse<>(e.toString(), "查询失败");
         }

@@ -29,13 +29,6 @@ public class BuildStrArgsUtil {
     }
 
     public static String jsonTrans(String jsonString){
-//        jsonString=jsonString.replace("generation_time","GenerationTime");
-//        jsonString=jsonString.replace("IdentificationPoint","identification_point");
-//        jsonString=jsonString.replace("Device","device");
-//        jsonString=jsonString.replace("Description","description");
-//        jsonString=jsonString.replace("EventLevel","event_level");
-//        jsonString=jsonString.replace("Remark","remark");
-//        jsonString=jsonString.replace("GenerationTime","generation_time");
         jsonString = jsonString.replace("generation_time","GenerationTime");
         jsonString = jsonString.replace("identification_point","IdentificationPoint");
         jsonString = jsonString.replace("device","Device");

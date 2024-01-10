@@ -1,3 +1,12 @@
+/*
+ * @Author: LHD
+ * @Date: 2024-01-02 14:19:10
+ * @LastEditors: 308twin 790816436@qq.com
+ * @LastEditTime: 2024-01-10 16:48:28
+ * @Description: 
+ * 
+ * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
+ */
 package com.mit.fabricsdk.utils;
 
 import java.io.BufferedReader;
@@ -52,11 +61,15 @@ public class K8SUtil {
             }
             //System.out.println(output.toString()); 
             res = output.toString();
-        } finally {
+        } catch (Exception e) {
+            throw e;
+        }finally {
             proc.destroy();
-        }
+        } 
 
         int exitCode = proc.waitFor();
+        if(exitCode!=0)
+            throw new Exception("执行命令失败"+res);
         System.out.println("Exit code: " + exitCode);
         return res;
     }

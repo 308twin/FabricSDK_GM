@@ -1,4 +1,13 @@
 /*
+ * @Author: LHD
+ * @Date: 2023-12-19 13:54:39
+ * @LastEditors: 308twin 790816436@qq.com
+ * @LastEditTime: 2024-01-10 14:29:36
+ * @Description: 
+ * 
+ * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
+ */
+/*
  * @Description: 
  * @Version: 2.0
  * @Author: Haodong Li
@@ -12,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mit.fabricsdk.dto.BaseRequest;
+import com.mit.fabricsdk.entity.ChaincodeInvoke;
 import com.mit.fabricsdk.entity.Instruction;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -37,7 +47,7 @@ public class SearchIpfsFileRequest extends BaseRequest {
     @JsonProperty("EndTime")
     @NotNull(message = "endTime cannot be null")
     private String endTime;
-    
+
     @JsonProperty("FileName")
     private String fileName;
 
@@ -59,9 +69,8 @@ public class SearchIpfsFileRequest extends BaseRequest {
     @JsonProperty("Description")
     private String description;
 
-     public  String[] toJSONString(){
-        List<String> resList = new ArrayList<>();
-        resList.add("QueryFileInfos");
+    public String[] toJSONString() {
+        List<String> resList = new ArrayList<>();       
         resList.add(startTime);
         resList.add(endTime);
         resList.add(fileName);
@@ -72,5 +81,19 @@ public class SearchIpfsFileRequest extends BaseRequest {
         resList.add(station);
         resList.add(description);
         return resList.toArray(new String[0]);
+    }
+
+    public String toChaincodeInvoke() {
+        ChaincodeInvoke chaincodeInvoke = new ChaincodeInvoke();
+        chaincodeInvoke.setFunction("QueryFileInfos");
+        chaincodeInvoke.setArgs(toJSONString());
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String json = mapper.writeValueAsString(chaincodeInvoke);
+            return json;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 }

@@ -2,7 +2,7 @@
  * @Author: LHD
  * @Date: 2024-01-02 14:19:10
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-10 16:48:28
+ * @LastEditTime: 2024-01-14 16:44:26
  * @Description: 
  * 
  * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
@@ -42,7 +42,7 @@ public class K8SUtil {
         // 查询Pods
         V1PodList list = listAllPods();
         if (list.getItems().isEmpty()) {            
-            return "没有找到Pods";
+            throw new Exception("没有找到通道所在org对应的pod");
         }
 
         V1Pod pod = podFilter(podName, list);
@@ -68,8 +68,10 @@ public class K8SUtil {
         } 
 
         int exitCode = proc.waitFor();
+        // if(!res.contains("200"))
+        //     throw new Exception("执行命令失败"+res.toString());
         if(exitCode!=0)
-            throw new Exception("执行命令失败"+res);
+            throw new Exception("执行命令失败"+res.toString());
         System.out.println("Exit code: " + exitCode);
         return res;
     }

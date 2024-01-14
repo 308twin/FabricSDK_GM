@@ -62,6 +62,13 @@ public class SecondaryController {
     @Autowired
     SecondaryComparisonDao secondaryComparisonDao;
 
+
+    /**
+     * @Author: LHD
+     * @Date: 2024-01-14 15:49:32
+     * @description: 批量新增二级数据
+     * @return {*}
+     */    
     @SneakyThrows
     @PostMapping(value = "api/blockchain/secondaryData/save", produces = "application/json")
     @ApiOperation("批量新增二级数据")

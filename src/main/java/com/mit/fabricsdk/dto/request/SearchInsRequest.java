@@ -1,7 +1,11 @@
 package com.mit.fabricsdk.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mit.fabricsdk.dto.BaseRequest;
+import com.mit.fabricsdk.entity.ChaincodeInvoke;
+
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -72,9 +76,6 @@ public class SearchInsRequest extends BaseRequest {
 
     public String[] toJSONString() {
         List<String> resList = new ArrayList<>();
-        resList.add("QueryInstructions");
-//        resList.add((startTime));
-//        resList.add(endTime);
         resList.add(getQuotedList(timeRange));
         resList.add(getQuotedList(eqDes));
         resList.add(getQuotedList(pid));
@@ -101,5 +102,20 @@ public class SearchInsRequest extends BaseRequest {
         } else {
             return "[]";
         }
+    }
+
+
+    public String toChaincodeInvoke() {
+        ChaincodeInvoke chaincodeInvoke = new ChaincodeInvoke();
+        chaincodeInvoke.setFunction("QueryInstructions");
+        chaincodeInvoke.setArgs(toJSONString());
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String json = mapper.writeValueAsString(chaincodeInvoke);
+            return json;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 }

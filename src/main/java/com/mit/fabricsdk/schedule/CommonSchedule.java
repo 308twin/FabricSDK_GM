@@ -2,7 +2,7 @@
  * @Author: LHD
  * @Date: 2023-12-19 13:54:39
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-09 13:52:56
+ * @LastEditTime: 2024-01-17 14:37:06
  * @Description: 
  * 
  * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
@@ -10,9 +10,12 @@
 package com.mit.fabricsdk.schedule;
 
 import com.mit.fabricsdk.component.ChannelInfo;
+import com.mit.fabricsdk.dao.ChannelDao;
 import com.mit.fabricsdk.dao.HistoryTxNumDao;
 import com.mit.fabricsdk.dto.BaseResponse;
+import com.mit.fabricsdk.entity.BlockChainChannel;
 import com.mit.fabricsdk.entity.HistoryTxNum;
+import com.mit.fabricsdk.service.K8SBlockService;
 import com.mit.fabricsdk.service.SmartContractService;
 
 import lombok.SneakyThrows;
@@ -32,14 +35,15 @@ import java.util.concurrent.Executor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * @author Haodong Li
  * @date 2023年05月28日 10:52
  */
 @Component
-//@EnableAsync
-//@EnableScheduling
-public class CommonSchedule  {
+// @EnableAsync
+// @EnableScheduling
+public class CommonSchedule {
     private static final Logger logger = LoggerFactory.getLogger(CommonSchedule.class);
 
     @Autowired
@@ -51,47 +55,45 @@ public class CommonSchedule  {
     @Autowired
     SmartContractService smartContractService;
 
+    @Autowired
+    K8SBlockService k8sBlockService;
+
+    @Autowired
+    private ChannelDao channelDao;
+
+    
 
     /**
-     * Description: 定时执行查询操作,防止每次查询都要去查询区块链，数据库查更快点
-     * date: 2023/5/28 10:58
-     * @author: Haodong Li
-     * @since: JDK 1.8
+     * @Author: LHD
+     * @Date: 2024-01-17 14:37:45
+     * @description: 每五分钟(300000ms)更新一次交易数量
+     * @return {*}
+     */   
+    @Scheduled(cron = "50 59 * * * *")
+    @Scheduled(fixedRate = 300000)
+    public void CalculateTxNum() throws InvalidArgumentException, ProposalException {
+        logger.info("CalculateTxNum:Start");
+        List<BlockChainChannel> channels;
+        channels = (List<BlockChainChannel>) channelDao.findAll();
+        for (BlockChainChannel channel : channels) {
+            long txNum = k8sBlockService.getTxNumNow(channel.getChannelName());
+            HistoryTxNum entity = new HistoryTxNum();
+            entity.setNum(txNum);
+            entity.setChannel(channel.getChannelName());
+            historyTxNumDao.save(entity);
+        }
+    }
 
-     */
-    // @Scheduled(cron = "50 59 * * * *")
-   @Scheduled(fixedRate = 60000)
-   public void CalculateTxNum() throws InvalidArgumentException, ProposalException {
-       List<String> channelList = new ArrayList<>();
-       logger.info("CalculateTxNum:Start");
-       for (String channelname : channelInfo.getChannelMap().keySet()){
-           logger.info("Excute CalculateTxNum");
-           long num = smartContractService.calculateTxNum(channelname);
-           HistoryTxNum entity = new HistoryTxNum();
-           entity.setNum(num);
-           entity.setChannel(channelname);
-           historyTxNumDao.save(entity);
-           logger.info("Save Transaction Count:"+ entity);
-       }
-   }
 
-    // @Scheduled(fixedRate = 60000)
-    // public void CalculateAllCount() throws InvalidArgumentException, ProposalException {
-    //     List<String> channelList = new ArrayList<>();
-    //     logger.info("CalculateTxNum:Start");
-    //     for (String channelname : channelInfo.getChannelMap().keySet()){
-    //         logger.info("Excute CalculateTxNum");
-    //         long num = smartContractService.calculateTxNum(channelname);
-    //         HistoryTxNum entity = new HistoryTxNum();
-    //         entity.setNum(num);
-    //         entity.setChannel(channelname);
-    //         historyTxNumDao.save(entity);
-    //         logger.info("Save Transaction Count:"+ entity);
-    //     }
-    // }
-
-    // @Scheduled(fixedRate = 60000)
-    // public void detectChannel(){
-    //     smartContractService.initBlockChain();
-    // }
+    /**
+     * @Author: LHD
+     * @Date: 2024-01-17 14:37:22
+     * @description: 每五分钟(300000ms)更新一次通道信息(区块高度、交易数量
+     * @return {*}
+     */    
+    @Scheduled(fixedRate = 300000)
+    public void UpdateChannelInfo() throws InvalidArgumentException, ProposalException {
+        logger.info("UpdateChannelInfo:Start");
+        k8sBlockService.GenerateChannelInfo(null);
+    }
 }

@@ -2,7 +2,7 @@
  * @Author: LHD
  * @Date: 2024-01-06 12:51:51
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-10 16:52:08
+ * @LastEditTime: 2024-01-17 15:28:40
  * @Description: 
  * 
  * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
@@ -28,13 +28,10 @@
 
 package com.mit.fabricsdk.service;
 
-import static com.mit.fabricsdk.utils.RemoveElementUtil.removeFirstElement;
-
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,8 +39,14 @@ import java.util.Map;
 import java.util.Base64;
 
 import com.mit.fabricsdk.entity.block.BlockInfo;
+
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
+import org.hyperledger.fabric.sdk.exception.ProposalException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.alibaba.fastjson.JSON;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -55,25 +58,23 @@ import com.mit.fabricsdk.dao.ChannelInfoDao;
 import com.mit.fabricsdk.dao.HistoryTxNumDao;
 import com.mit.fabricsdk.dao.PlatformDao;
 import com.mit.fabricsdk.dto.GetHistoryTxCountDto;
+import com.mit.fabricsdk.dto.response.BlockTxCountResponse;
 import com.mit.fabricsdk.entity.BlockChainChannel;
 import com.mit.fabricsdk.entity.ChaincodeInvoke;
 import com.mit.fabricsdk.entity.ChannelInfo;
 import com.mit.fabricsdk.entity.HistoryTxNum;
 import com.mit.fabricsdk.entity.Major;
-import com.mit.fabricsdk.entity.SecondaryData;
 import com.mit.fabricsdk.entity.Transaction;
 import com.mit.fabricsdk.entity.block.ChainInfo;
 import com.mit.fabricsdk.utils.BuildStrArgsUtil;
-import com.mit.fabricsdk.utils.GatewayUtil;
-import com.mit.fabricsdk.utils.JsonUtil;
 import com.mit.fabricsdk.utils.K8SUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 
-import lombok.SneakyThrows;
-
 @Service
 public class K8SBlockService {
+    private static final Logger logger = LoggerFactory.getLogger(SmartContractService.class);
+
     @Value("${k8s.namespace}")
     String namespace;
 
@@ -138,22 +139,51 @@ public class K8SBlockService {
         ObjectMapper mapper = new ObjectMapper();
         String blockFileName = channelName + "_" + blockNum + ".block";
         String blockJsonFileName = channelName + "_" + blockNum + ".json";
+        // 生成.block文件
+        String bash1 = "export CORE_PEER_ADDRESS=" + channel.get(0).getTargetOrg() + peerTail
+                + " && peer channel fetch "
+                + blockNum + " " + blockFileName + " -c " + channelName + " -o " + order + " --tls --cafile "
+                + cafile;
+        String bash2 = "configtxlator proto_decode --input " + blockFileName
+                + " --type common.Block | jq . > " + blockJsonFileName;
+        String bash3 = "cat " + blockJsonFileName;
+        String bash4 = "rm " + blockFileName + " " + blockJsonFileName;
+
         String[] command1 = new String[] { "/bin/bash", "-c",
                 "export CORE_PEER_ADDRESS=" + channel.get(0).getTargetOrg() + peerTail + " && peer channel fetch "
                         + blockNum + " " + blockFileName + " -c " + channelName + " -o " + order + " --tls --cafile "
                         + cafile };
+        // 生成.json文件
         String[] command2 = new String[] { "/bin/bash", "-c", "configtxlator proto_decode --input " + blockFileName
                 + " --type common.Block | jq . > " + blockJsonFileName };
+        // 读取.json文件
         String[] command3 = new String[] { "/bin/bash", "-c", "cat " + blockJsonFileName };
+        // 删除.block和.json文件
         String[] command4 = new String[] { "/bin/bash", "-c", "rm " + blockFileName + " " + blockJsonFileName };
+        String[] command = new String[] { "/bin/bash", "-c", bash1 + " && " + bash2 + " && " + bash3 + " && " + bash4 };
 
-        K8SUtil.excuteK8SCommand(namespace, channel.get(0).getTargetOrg() + adminTail, command1);
-        K8SUtil.excuteK8SCommand(namespace, channel.get(0).getTargetOrg() + adminTail, command2);
-        String json = K8SUtil.excuteK8SCommand(namespace, channel.get(0).getTargetOrg() + adminTail, command3);
-        // K8SUtil.excuteK8SCommand(namespace, channel.get(0).getTargetOrg()+adminTail,
-        // command4);
+        String json = K8SUtil.excuteK8SCommand(namespace, channel.get(0).getTargetOrg() + adminTail, command);
+        json = json.substring(json.indexOf('{'), json.lastIndexOf('}') + 1);
+        // K8SUtil.excuteK8SCommand(namespace, channel.get(0).getTargetOrg() +
+        // adminTail, command1);
+        // K8SUtil.excuteK8SCommand(namespace, channel.get(0).getTargetOrg() +
+        // adminTail, command2);
+        // String json = K8SUtil.excuteK8SCommand(namespace,
+        // channel.get(0).getTargetOrg() + adminTail, command3);
+        // try {
+        // K8SUtil.excuteK8SCommand(namespace, channel.get(0).getTargetOrg() +
+        // adminTail, command4);
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // }
+        BlockInfo blockInfo = null;
+        try {
+            blockInfo = mapper.readValue(json, BlockInfo.class);
+            return blockInfo;
 
-        BlockInfo blockInfo = mapper.readValue(json, BlockInfo.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return blockInfo;
     }
 
@@ -232,34 +262,78 @@ public class K8SBlockService {
      * @description: 更新数据库中的channel_info
      * @return {*}
      */
-    public void GenerateChannelInfo() {
-        List<BlockChainChannel> channels = (List<BlockChainChannel>) channelDao.findAll();
+    public void GenerateChannelInfo(String designatedChannelName) {
+        List<BlockChainChannel> channels;
+        if (designatedChannelName == null || designatedChannelName.equals("")) {
+            channels = (List<BlockChainChannel>) channelDao.findAll();
+        } else {
+            channels = (List<BlockChainChannel>) channelDao.findByChannelName(designatedChannelName);
+        }
 
         List<Object[]> resultList = channelInfoDao.findMaxChannelHeightForEachChannel();
         Map<String, Long> channelHeightMap = new HashMap<>();
-
+        Map<String, Long> channelTxCountMap = new HashMap<>();
         for (Object[] result : resultList) {
             String channelName = (String) result[0];
             Long channelHeight = (Long) result[1];
-
+            Long channelTxCount = (Long) result[2];
             channelHeightMap.put(channelName, channelHeight);
+            channelTxCountMap.put(channelName, channelTxCount);
         }
         for (BlockChainChannel channel : channels) {
             try {
-                Long initHeight = channelHeightMap.getOrDefault(channel.getChannelName(), 5L); // 5 is the default value
+                Long initHeight = channelHeightMap.getOrDefault(channel.getChannelName(), 4L); // 5 is the default value
+                Long txCount = channelTxCountMap.getOrDefault(channel.getChannelName(), 0L);
                 Long height = getBlockHeight(channel.getChannelName());
-                Long txCount = 0L;
-                for (Long i = initHeight; i < height; i++) {
-                    BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), i);
-                    String blockGenerationTime = getBlockGenerationTime(blockInfo);
-                    txCount += getTransactionCount(blockInfo);
-                    ChannelInfo channelInfo = new ChannelInfo();
-                    channelInfo.setChannelName(channel.getChannelName());
-                    channelInfo.setChannelHeight(i);
-                    channelInfo.setChannelTxCount(txCount);
-                    channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
-                    channelInfo.setNewestBlockTime(blockGenerationTime);
-                    channelInfoDao.save(channelInfo);
+
+                if (height == 5) {  //第一次初始化的情况
+                    BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), 4L);
+                    if (blockInfo != null) {
+                        String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                        ChannelInfo channelInfo = new ChannelInfo();
+                        channelInfo.setChannelName(channel.getChannelName());
+                        channelInfo.setChannelHeight(4L);
+                        channelInfo.setChannelTxCount(0L);
+                        channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                        channelInfo.setNewestBlockTime(blockGenerationTime);
+                        channelInfoDao.save(channelInfo);
+                    }
+
+                } 
+                else if(initHeight+1==height){  //没有新增区块的情况，应该用之前区块的加上当前区块的交易数量
+                    List<ChannelInfo> channelInfoList = channelInfoDao.findByChannelHeight(initHeight-1);
+                    if(channelInfoList.size()==0)
+                        continue;
+                    ChannelInfo newestChannelInfo = channelInfoList.get(channelInfoList.size()-1);
+                    BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), initHeight);
+                    if (blockInfo != null) {
+                        String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                        txCount = (long) getTransactionCount(blockInfo);
+                        ChannelInfo channelInfo = new ChannelInfo();
+                        channelInfo.setChannelName(channel.getChannelName());
+                        channelInfo.setChannelHeight(initHeight);
+                        channelInfo.setChannelTxCount(newestChannelInfo.getChannelTxCount()+txCount);
+                        channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                        channelInfo.setNewestBlockTime(blockGenerationTime);
+                        channelInfoDao.save(channelInfo);
+                    }
+                }
+                else {
+                    for (Long i = initHeight+1; i < height; i++) {
+                        BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), i);
+                        if (blockInfo != null) {
+                            String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                            txCount += getTransactionCount(blockInfo);
+                            ChannelInfo channelInfo = new ChannelInfo();
+                            channelInfo.setChannelName(channel.getChannelName());
+                            channelInfo.setChannelHeight(i);
+                            channelInfo.setChannelTxCount(txCount);
+                            channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                            channelInfo.setNewestBlockTime(blockGenerationTime);
+                            channelInfoDao.save(channelInfo);
+                        }
+
+                    }
                 }
 
             } catch (Exception e) {
@@ -270,25 +344,58 @@ public class K8SBlockService {
 
     /**
      * @Author: LHD
+     * @Date: 2024-01-16 14:34:15
+     * @description: 获取最新的交易数量：通过查询数据库获取之前的数量，外加计算未统计的数量
+     * @param {String} channelName
+     * @return {*}
+     */
+    public Long getTxNumNow(String channelName) {
+        try {
+            Long maxChannelHeight = channelInfoDao.findMaxChannelHeightForSingleChannel(channelName);
+            Long initHeight = (maxChannelHeight != null) ? Math.max(maxChannelHeight, 4L) : 4L;
+            Long maxTxCount = channelInfoDao.findMaxChannelTxForSingleChannel(channelName);
+            Long txCount = (maxTxCount != null) ? Math.max(maxTxCount, 0L) : 0L;
+            Long height = getBlockHeight(channelName);
+            for (Long i = initHeight + 1; i < height; i++) {
+                BlockInfo blockInfo = getBlockInfo(channelName, i);
+                if (blockInfo != null) {
+                    txCount += getTransactionCount(blockInfo);
+                }
+
+            }
+            return txCount;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1L;
+        }
+    }
+
+    /**
+     * @Author: LHD
      * @Date: 2024-01-10 12:48:57
      * @description: 根据最新的五个区块获取最新的5个交易信息.
      * @return {*}
      */
-    public List<Transaction> getLatestTx(String channelName) {
+    public List<Transaction> getLatestTx(String channelName, String type) {
         try {
             List<Transaction> transactions = new ArrayList<>();
             long height = getBlockHeight(channelName);
             for (long i = Math.max(5, height - 5); i < height; i++) {
                 BlockInfo blockInfo = getBlockInfo(channelName, i);
-                int txCount = getTransactionCount(blockInfo);
-                for (int j = 0; j < txCount; j++) {
-                    Transaction transaction = new Transaction();
-                    transaction.setTimestamp(getFormatDate(blockInfo.getData().getData().get(j).getPayload().getHeader()
-                            .getChannel_header().getTimestamp()));
-                    transaction.setTxHash(blockInfo.getData().getData().get(j).getPayload().getHeader()
-                            .getChannel_header().getTx_id());
-                    transaction.setDevice(getDevice(blockInfo, j));
-                    transactions.add(transaction);
+                if (blockInfo != null) {
+                    int txCount = getTransactionCount(blockInfo);
+                    for (int j = 0; j < txCount; j++) {
+                        Transaction transaction = new Transaction();
+                        transaction.setTimestamp(
+                                getFormatDate(blockInfo.getData().getData().get(j).getPayload().getHeader()
+                                        .getChannel_header().getTimestamp()));
+                        transaction.setTxHash(blockInfo.getData().getData().get(j).getPayload().getHeader()
+                                .getChannel_header().getTx_id());
+                        if (type.toUpperCase().equals("MAJOR"))
+                            transaction.setDevice(getDevice(blockInfo, j));
+                        transactions.add(transaction);
+                    }
                 }
             }
             if (transactions.size() > 5)
@@ -300,6 +407,18 @@ public class K8SBlockService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * @Author: LHD
+     * @Date: 2024-01-16 12:47:11
+     * @description: 获取最新的n个区块信息
+     * @return {*}
+     */
+    public List<ChannelInfo> getLatestBlock(String channelName, int n) {
+        GenerateChannelInfo(channelName);
+        List<ChannelInfo> channelInfos = channelInfoDao.findTopNByChannelName(channelName, n);
+        return channelInfos;
     }
 
     /**
@@ -341,7 +460,7 @@ public class K8SBlockService {
     public String searchK8S(String channelName, String contractName, String searchString) throws Exception {
         List<BlockChainChannel> channel = (List<BlockChainChannel>) channelDao.findByChannelName(channelName);
         if (channel.size() == 0)
-            return null;
+            throw new Exception("channel not found");
         String org = channel.get(0).getTargetOrg();
         String[] command = new String[] { "/bin/sh", "-c",
                 "export CORE_PEER_ADDRESS=" + channel.get(0).getTargetOrg() + peerTail + " && peer chaincode query -C "
@@ -357,13 +476,19 @@ public class K8SBlockService {
      * @return {*}
      */
     public List<Map<String, Object>> toJsonObject(String json) {
-        JSONArray contentArray1 = JSONArray.parseArray(json);
-        if (contentArray1 == null)
-            return null;
-
+        Object parsedJson = JSON.parse(json);
         List<Map<String, Object>> list = new LinkedList<>();
-        for (int i = 0; i < contentArray1.size(); i++) {
-            Map<String, Object> map = ((JSONObject) contentArray1.get(i)).getInnerMap();
+
+        if (parsedJson instanceof JSONArray) {
+            // 如果json是数组
+            JSONArray contentArray = (JSONArray) parsedJson;
+            for (int i = 0; i < contentArray.size(); i++) {
+                Map<String, Object> map = ((JSONObject) contentArray.get(i)).getInnerMap();
+                list.add(map);
+            }
+        } else if (parsedJson instanceof JSONObject) {
+            // 如果json是单个对象
+            Map<String, Object> map = ((JSONObject) parsedJson).getInnerMap();
             list.add(map);
         }
 
@@ -383,7 +508,8 @@ public class K8SBlockService {
             if (channel.size() == 0)
                 throw new Exception("channel not found");
             String org = channel.get(0).getTargetOrg();
-            String[] command = new String[] { "/bin/sh", "-c", "export CORE_PEER_ADDRESS=" + channel.get(0).getTargetOrg() + peerTail + " && peer chaincode invoke -C " + channelName + " -n "
+            String[] command = new String[] { "/bin/sh", "-c", "export CORE_PEER_ADDRESS="
+                    + channel.get(0).getTargetOrg() + peerTail + " && peer chaincode invoke -C " + channelName + " -n "
                     + contractName + " -c '" + submitString + "'" + " -o " + order + " --tls --cafile " + cafile };
             String res = K8SUtil.excuteK8SCommand(namespace, org, command);
             return res;
@@ -405,7 +531,7 @@ public class K8SBlockService {
     public String buildSubmitStr(String function, String argStr) {
         ChaincodeInvoke chaincodeInvoke = new ChaincodeInvoke();
         chaincodeInvoke.setFunction(function);
-        //argStr = argStr.replace("\"", "\\\"");
+        // argStr = argStr.replace("\"", "\\\"");
         chaincodeInvoke.setArgs(new String[] { argStr });
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -415,6 +541,35 @@ public class K8SBlockService {
             e.printStackTrace();
         }
         return "";
+    }
+
+    /**
+     * @Author: LHD
+     * @Date: 2024-01-17 13:26:41
+     * @description: 获取区块数量和交易数量
+     * @return {*}
+     */    
+    public BlockTxCountResponse getBlockTxCount() throws InvalidArgumentException, ProposalException {
+        List<Object[]> channelInfos = channelInfoDao.findMaxChannelHeightChannels();
+        BlockTxCountResponse blockTxCountResponse = new BlockTxCountResponse();
+        List<Long> block = new ArrayList<>();
+        List<Long> transaction = new ArrayList<>();
+        List<String> chanelName = new ArrayList<>();
+        for (Object[] channel : channelInfos) {
+            try {
+                block.add((Long)channel[2]);
+                transaction.add((Long)channel[1]);
+                chanelName.add((String)channel[0]);
+
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+
+        }
+        blockTxCountResponse.setBlock(block);
+        blockTxCountResponse.setTransaction(transaction);
+        blockTxCountResponse.setChanelName(chanelName);
+        return blockTxCountResponse;
     }
 
 }

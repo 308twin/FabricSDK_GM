@@ -1,5 +1,9 @@
 package com.mit.fabricsdk.dto.request;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mit.fabricsdk.dto.BaseRequest;
+import com.mit.fabricsdk.entity.ChaincodeInvoke;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
@@ -41,7 +45,6 @@ public class SearchMajorRequest extends BaseRequest {
 
     public  String[] toJSONString(){
         List<String> resList = new ArrayList<>();
-        resList.add("QueryEvents");
         resList.add((startTime));
         resList.add(endTime);
         resList.add(identificationPoints.stream().map(s -> "\"" + s + "\"")
@@ -53,5 +56,19 @@ public class SearchMajorRequest extends BaseRequest {
         resList.add(eventLevels.stream().map(s -> "\"" + s + "\"")
                 .collect(Collectors.toList()).toString());
         return resList.toArray(new String[0]);
+    }
+
+    public String toChaincodeInvoke() {
+        ChaincodeInvoke chaincodeInvoke = new ChaincodeInvoke();
+        chaincodeInvoke.setFunction("QueryEvents");
+        chaincodeInvoke.setArgs(toJSONString());
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String json = mapper.writeValueAsString(chaincodeInvoke);
+            return json;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 }

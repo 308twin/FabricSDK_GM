@@ -2,7 +2,7 @@
  * @Author: LHD
  * @Date: 2023-12-19 13:54:39
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-10 13:45:12
+ * @LastEditTime: 2024-01-17 14:36:26
  * @FilePath: /FabricSDK_GM/src/main/java/com/mit/fabricsdk/controller/CommonChannelController.java
  * @Description: 
  * 
@@ -44,19 +44,10 @@ public class CommonChannelController {
     K8SBlockService k8sBlockService;
 
     @SneakyThrows
-    @PostMapping(value = "api/blockchain/common/init",produces = "application/json")
-    @ApiOperation("init")
-    public BaseResponse<Object> searchMajor(@RequestBody @Valid InitRequest request){
-       //smartContractService.initNewChannel(request.getOrgName(),request.getChannelName());
-        smartContractService.initBlockChain();
-        return new BaseResponse<>("","channel创建成功");
-    }
-
-    @SneakyThrows
     @GetMapping(value = "api/blockchain/common/height", produces = "application/json")
     @ApiOperation("成功获取高度")
     public BaseResponse<Object> getChainHeight(@RequestParam @ApiParam(value = "ChannelName", example = "pscada") String channelName) {
-        Long height = smartContractService.getChainHeight(channelName);
+        Long height = k8sBlockService.getBlockHeight(channelName);
         return new BaseResponse<>(height, "成功获取高度");
     }
 
@@ -65,7 +56,7 @@ public class CommonChannelController {
     @ApiOperation("获取最新区块")
     public BaseResponse<Object> getLatestBlock(@RequestParam @ApiParam(value = "ChannelName", example = "pscada") String channelName,
                                                @RequestParam @ApiParam(value = "Num", example = "10", defaultValue = "10") Integer num) {
-        Object res = smartContractService.getLatestBlock(num,channelName);
+        Object res = k8sBlockService.getLatestBlock(channelName,num);
         return new BaseResponse<>(res, "成功获取最新区块");
     }
 
@@ -74,25 +65,16 @@ public class CommonChannelController {
     @ApiOperation("获取最新存证")
     public BaseResponse<Object> getLatestTx(@RequestParam @ApiParam(value = "ChannelName", example = "pscada") String channelName,
                                                @RequestParam @ApiParam(value = "Num", example = "10", defaultValue = "10") Integer num,
-                                            @RequestParam @ApiParam(value = "Major", example = "10", defaultValue = "Major") String type) {
-        Object res = smartContractService.getLatestTx(num,channelName,type);
+                                            @RequestParam @ApiParam(value = "Major", example = "10", defaultValue = "") String type) {
+        Object res = k8sBlockService.getLatestTx(channelName,type);
         return new BaseResponse<>(res, "成功获取最新存证");
     }
 
-    @SneakyThrows
-    @GetMapping(value = "api/blockchain/common/latestTxNew", produces = "application/json")
-    @ApiOperation("获取最新存证")
-    public BaseResponse<Object> getLatestTxNew(@RequestParam @ApiParam(value = "ChannelName", example = "pscada") String channelName,
-                                            @RequestParam @ApiParam(value = "Num", example = "10", defaultValue = "10") Integer num) {
-        Object res = smartContractService.getLatestTxNew(num,channelName);
-        return new BaseResponse<>(res, "成功获取最新存证");
-    }
 
     @SneakyThrows
     @GetMapping(value = "api/blockchain/common/historyTxCount", produces = "application/json")
     @ApiOperation("获取历史交易数量(整点)")
     public BaseResponse<Object> historyTxCount(
-            //@RequestParam @ApiParam(value = "ChannelName", example = "pscada") String channelName,
                                             @RequestParam @ApiParam(value = "Num", example = "10", defaultValue = "10") Integer num) {
         Object res = smartContractService.getHistoryTxCount(num);
         return new BaseResponse<>(res, "成功获取历史交易数量");
@@ -102,32 +84,9 @@ public class CommonChannelController {
     @GetMapping(value = "api/blockchain/common/blockTxCount", produces = "application/json")
     @ApiOperation("获取区块数量和交易数量")
     public BaseResponse<Object> blockTxCount(
-            //@RequestParam @ApiParam(value = "ChannelName", example = "pscada") String channelName,
-            //@RequestParam @ApiParam(value = "Num", example = "10", defaultValue = "10") Integer num)
     ){
-        Object res = smartContractService.getBlockTxCount();
+        Object res = k8sBlockService.getBlockTxCount();
         return new BaseResponse<>(res, "获取区块数量和交易数量");
-    }
-//    @SneakyThrows
-//    @GetMapping(value = "api/blockchain/common/getBlockTxCount", produces = "application/json")
-//    @ApiOperation("获取区块数量和交易数量")
-//    public BaseResponse<Object> getBlockTxCount(
-//            @RequestParam @ApiParam(value = "Num", example = "10", defaultValue = "10") Integer num) {
-//        Object res = smartContractService.getBlockTxCount();
-//        return new BaseResponse<>(res, "成功获取历史交易数量");
-//    }
-    @GetMapping(value = "api/blockchain/common/test", produces = "application/json")
-    public Object test() {
-        try {
-            //return k8sBlockService.getBlockHeight("pingliangroadmajorchannel");
-            //Object res =  k8sBlockService.getBlockInfo("pingliangroadmajorchannel",7L);
-            //k8sBlockService.GenerateChannelInfo();
-            return k8sBlockService.getLatestTx("pingliangroadmajorchannel");
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return 0;
     }
     
 }

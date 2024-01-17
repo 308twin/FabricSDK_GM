@@ -1,3 +1,12 @@
+/*
+ * @Author: LHD
+ * @Date: 2024-01-05 11:31:02
+ * @LastEditors: 308twin 790816436@qq.com
+ * @LastEditTime: 2024-01-16 13:14:35
+ * @Description: 
+ * 
+ * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
+ */
 /**
   * Copyright 2024 bejson.com 
   */
@@ -11,7 +20,7 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Ns_rwset {
 
-    private List<String> collection_hashed_rwset;
+    private List<Object> collection_hashed_rwset;
     private String namespace;
     private Rwset rwset;   
 

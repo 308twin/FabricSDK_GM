@@ -2,7 +2,7 @@
  * @Author: LHD
  * @Date: 2024-01-06 12:51:51
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-17 15:28:40
+ * @LastEditTime: 2024-01-22 14:48:51
  * @Description: 
  * 
  * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
@@ -28,6 +28,7 @@
 
 package com.mit.fabricsdk.service;
 
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -58,6 +59,7 @@ import com.mit.fabricsdk.dao.ChannelInfoDao;
 import com.mit.fabricsdk.dao.HistoryTxNumDao;
 import com.mit.fabricsdk.dao.PlatformDao;
 import com.mit.fabricsdk.dto.GetHistoryTxCountDto;
+import com.mit.fabricsdk.dto.LatestBlockDto;
 import com.mit.fabricsdk.dto.response.BlockTxCountResponse;
 import com.mit.fabricsdk.entity.BlockChainChannel;
 import com.mit.fabricsdk.entity.ChaincodeInvoke;
@@ -262,7 +264,7 @@ public class K8SBlockService {
      * @description: 更新数据库中的channel_info
      * @return {*}
      */
-    public void GenerateChannelInfo(String designatedChannelName) {
+    public void GenerateChannelInfo(String designatedChannelName) throws Exception {
         List<BlockChainChannel> channels;
         if (designatedChannelName == null || designatedChannelName.equals("")) {
             channels = (List<BlockChainChannel>) channelDao.findAll();
@@ -282,59 +284,144 @@ public class K8SBlockService {
         }
         for (BlockChainChannel channel : channels) {
             try {
+                Long recordHeight = channelHeightMap.getOrDefault(channel.getChannelName(), 0L);
                 Long initHeight = channelHeightMap.getOrDefault(channel.getChannelName(), 4L); // 5 is the default value
                 Long txCount = channelTxCountMap.getOrDefault(channel.getChannelName(), 0L);
                 Long height = getBlockHeight(channel.getChannelName());
-
-                if (height == 5) {  //第一次初始化的情况
-                    BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), 4L);
-                    if (blockInfo != null) {
-                        String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                // 数据库中没有记录的情况
+                if (recordHeight == 0) {
+                    // 高度小于5的部分(实际高度是4)，交易数量都是0
+                    for (int i = 0; i < 5; i++) {
+                        BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), (long) i);
                         ChannelInfo channelInfo = new ChannelInfo();
+                        String blockGenerationTime = getBlockGenerationTime(blockInfo);
                         channelInfo.setChannelName(channel.getChannelName());
-                        channelInfo.setChannelHeight(4L);
+                        channelInfo.setChannelHeight((long) i);
                         channelInfo.setChannelTxCount(0L);
                         channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
                         channelInfo.setNewestBlockTime(blockGenerationTime);
                         channelInfoDao.save(channelInfo);
                     }
+                    // 高度大于5的部分，实际高度是height-1
+                    if (height > 5) {
+                        for (long i = 5; i < height; i++) {
+                            BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), i);
+                            if (blockInfo != null) {
+                                String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                                txCount += getTransactionCount(blockInfo);
+                                ChannelInfo channelInfo = new ChannelInfo();
+                                channelInfo.setChannelName(channel.getChannelName());
+                                channelInfo.setChannelHeight(i);
+                                channelInfo.setChannelTxCount(txCount);
+                                channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                                channelInfo.setNewestBlockTime(blockGenerationTime);
+                                channelInfoDao.save(channelInfo);
+                            }
 
-                } 
-                else if(initHeight+1==height){  //没有新增区块的情况，应该用之前区块的加上当前区块的交易数量
-                    List<ChannelInfo> channelInfoList = channelInfoDao.findByChannelHeight(initHeight-1);
-                    if(channelInfoList.size()==0)
-                        continue;
-                    ChannelInfo newestChannelInfo = channelInfoList.get(channelInfoList.size()-1);
-                    BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), initHeight);
-                    if (blockInfo != null) {
-                        String blockGenerationTime = getBlockGenerationTime(blockInfo);
-                        txCount = (long) getTransactionCount(blockInfo);
-                        ChannelInfo channelInfo = new ChannelInfo();
-                        channelInfo.setChannelName(channel.getChannelName());
-                        channelInfo.setChannelHeight(initHeight);
-                        channelInfo.setChannelTxCount(newestChannelInfo.getChannelTxCount()+txCount);
-                        channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
-                        channelInfo.setNewestBlockTime(blockGenerationTime);
-                        channelInfoDao.save(channelInfo);
+                        }
                     }
+
                 }
+                // 数据库中有记录，则更新记录
                 else {
-                    for (Long i = initHeight+1; i < height; i++) {
-                        BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), i);
+                    if (height == 5) {
+                        BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), 4L);
                         if (blockInfo != null) {
                             String blockGenerationTime = getBlockGenerationTime(blockInfo);
-                            txCount += getTransactionCount(blockInfo);
                             ChannelInfo channelInfo = new ChannelInfo();
                             channelInfo.setChannelName(channel.getChannelName());
-                            channelInfo.setChannelHeight(i);
-                            channelInfo.setChannelTxCount(txCount);
+                            channelInfo.setChannelHeight(4L);
+                            channelInfo.setChannelTxCount(0L);
                             channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
                             channelInfo.setNewestBlockTime(blockGenerationTime);
                             channelInfoDao.save(channelInfo);
                         }
+                    } else if (initHeight + 1 == height) { // 没有新增区块的情况，应该用之前区块的加上当前区块的交易数量
+                        List<ChannelInfo> channelInfoList = channelInfoDao.findByChannelHeight(initHeight - 1);
+                        if (channelInfoList.size() == 0)
+                            continue;
+                        ChannelInfo newestChannelInfo = channelInfoList.get(channelInfoList.size() - 1);
+                        BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), initHeight);
+                        if (blockInfo != null) {
+                            String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                            txCount = (long) getTransactionCount(blockInfo);
+                            ChannelInfo channelInfo = new ChannelInfo();
+                            channelInfo.setChannelName(channel.getChannelName());
+                            channelInfo.setChannelHeight(initHeight);
+                            channelInfo.setChannelTxCount(newestChannelInfo.getChannelTxCount() + txCount);
+                            channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                            channelInfo.setNewestBlockTime(blockGenerationTime);
+                            channelInfoDao.save(channelInfo);
+                        }
+                    } else {
+                        for (Long i = initHeight + 1; i < height; i++) {
+                            BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), i);
+                            if (blockInfo != null) {
+                                String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                                txCount += getTransactionCount(blockInfo);
+                                ChannelInfo channelInfo = new ChannelInfo();
+                                channelInfo.setChannelName(channel.getChannelName());
+                                channelInfo.setChannelHeight(i);
+                                channelInfo.setChannelTxCount(txCount);
+                                channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                                channelInfo.setNewestBlockTime(blockGenerationTime);
+                                channelInfoDao.save(channelInfo);
+                            }
 
+                        }
                     }
                 }
+
+                // if (height == 5) { // 第一次初始化的情况
+                // BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), 4L);
+                // if (blockInfo != null) {
+                // String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                // ChannelInfo channelInfo = new ChannelInfo();
+                // channelInfo.setChannelName(channel.getChannelName());
+                // channelInfo.setChannelHeight(4L);
+                // channelInfo.setChannelTxCount(0L);
+                // channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                // channelInfo.setNewestBlockTime(blockGenerationTime);
+                // channelInfoDao.save(channelInfo);
+                // }
+
+                // } else if (initHeight + 1 == height) { // 没有新增区块的情况，应该用之前区块的加上当前区块的交易数量
+                // List<ChannelInfo> channelInfoList =
+                // channelInfoDao.findByChannelHeight(initHeight - 1);
+                // if (channelInfoList.size() == 0)
+                // continue;
+                // ChannelInfo newestChannelInfo = channelInfoList.get(channelInfoList.size() -
+                // 1);
+                // BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), initHeight);
+                // if (blockInfo != null) {
+                // String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                // txCount = (long) getTransactionCount(blockInfo);
+                // ChannelInfo channelInfo = new ChannelInfo();
+                // channelInfo.setChannelName(channel.getChannelName());
+                // channelInfo.setChannelHeight(initHeight);
+                // channelInfo.setChannelTxCount(newestChannelInfo.getChannelTxCount() +
+                // txCount);
+                // channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                // channelInfo.setNewestBlockTime(blockGenerationTime);
+                // channelInfoDao.save(channelInfo);
+                // }
+                // } else {
+                // for (Long i = initHeight + 1; i < height; i++) {
+                // BlockInfo blockInfo = getBlockInfo(channel.getChannelName(), i);
+                // if (blockInfo != null) {
+                // String blockGenerationTime = getBlockGenerationTime(blockInfo);
+                // txCount += getTransactionCount(blockInfo);
+                // ChannelInfo channelInfo = new ChannelInfo();
+                // channelInfo.setChannelName(channel.getChannelName());
+                // channelInfo.setChannelHeight(i);
+                // channelInfo.setChannelTxCount(txCount);
+                // channelInfo.setNewestBlockHash(blockInfo.getHeader().getData_hash());
+                // channelInfo.setNewestBlockTime(blockGenerationTime);
+                // channelInfoDao.save(channelInfo);
+                // }
+
+                // }
+                // }
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -415,10 +502,26 @@ public class K8SBlockService {
      * @description: 获取最新的n个区块信息
      * @return {*}
      */
-    public List<ChannelInfo> getLatestBlock(String channelName, int n) {
+    // public List<ChannelInfo> getLatestBlock(String channelName, int n) throws
+    // Exception {
+    // GenerateChannelInfo(channelName);
+    // List<ChannelInfo> channelInfos =
+    // channelInfoDao.findTopNByChannelName(channelName, n);
+    // return channelInfos;
+    // }
+    public List<LatestBlockDto> getLatestBlock(String channelName, int n) throws Exception {
         GenerateChannelInfo(channelName);
-        List<ChannelInfo> channelInfos = channelInfoDao.findTopNByChannelName(channelName, n);
-        return channelInfos;
+        List<LatestBlockDto> dtos = new ArrayList<>();
+        List<Object[]> results = channelInfoDao.findDistinctTopNByChannelName(channelName, n);
+        for (Object[] result : results) {
+            dtos.add(new LatestBlockDto(
+                    (String) result[0],
+                    ((BigInteger) result[1]).longValue(), 
+                    ((BigInteger) result[2]).longValue(), // 同上
+                    (String) result[3],
+                    (String) result[4]));
+        }
+        return dtos;
     }
 
     /**
@@ -548,7 +651,7 @@ public class K8SBlockService {
      * @Date: 2024-01-17 13:26:41
      * @description: 获取区块数量和交易数量
      * @return {*}
-     */    
+     */
     public BlockTxCountResponse getBlockTxCount() throws InvalidArgumentException, ProposalException {
         List<Object[]> channelInfos = channelInfoDao.findMaxChannelHeightChannels();
         BlockTxCountResponse blockTxCountResponse = new BlockTxCountResponse();
@@ -557,9 +660,9 @@ public class K8SBlockService {
         List<String> chanelName = new ArrayList<>();
         for (Object[] channel : channelInfos) {
             try {
-                block.add((Long)channel[2]);
-                transaction.add((Long)channel[1]);
-                chanelName.add((String)channel[0]);
+                block.add((Long) channel[2]);
+                transaction.add((Long) channel[1]);
+                chanelName.add((String) channel[0]);
 
             } catch (Exception e) {
                 logger.info(e.toString());

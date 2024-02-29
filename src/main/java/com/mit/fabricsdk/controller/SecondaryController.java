@@ -43,6 +43,7 @@ import io.swagger.annotations.ApiParam;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
@@ -67,13 +68,12 @@ public class SecondaryController {
     @Autowired
     K8SBlockService k8sBlockService;
 
-
     /**
      * @Author: LHD
      * @Date: 2024-01-14 15:49:32
      * @description: 批量新增二级数据
      * @return {*}
-     */    
+     */
     @SneakyThrows
     @PostMapping(value = "api/blockchain/secondaryData/save", produces = "application/json")
     @ApiOperation("批量新增二级数据")
@@ -129,11 +129,12 @@ public class SecondaryController {
     @ApiOperation("查找二级数据")
     public BaseResponse<Object> searchScondary(@RequestBody @Valid SearchSecondaryRequest request) {
         try {
-            String res = k8sBlockService.searchK8S(request.getChannelName(), request.getContractName(), request.toChaincodeInvoke());            
+            String res = k8sBlockService.searchK8S(request.getChannelName(), request.getContractName(),
+                    request.toChaincodeInvoke());
             return new BaseResponse<>(k8sBlockService.toJsonObject(res), "查询成功");
         } catch (Exception e) {
             return new BaseResponse<>(e.toString(), "查询失败");
-        } 
+        }
     }
 
     @SneakyThrows
@@ -166,9 +167,22 @@ public class SecondaryController {
     @ApiOperation("查找二级数据比对")
     public BaseResponse<Object> searchComparison(@RequestBody @Valid SearchSecondaryComparison request) {
         try {
-            Object res = secondaryComparisonDao.findByMultipleFields(
+            //这里做了时区的转换
+            // 减少8小时
+            LocalDateTime adjustedDateTimeFrom = request.getGenerationTimeFrom().toLocalDateTime().minusHours(8);
+            // 将调整后的LocalDateTime转换回Timestamp
+            Timestamp adjustedTimestampFrom = Timestamp.valueOf(adjustedDateTimeFrom);
+
+            LocalDateTime adjustedDateTimeTo = request.getGenerationTimeTo().toLocalDateTime().minusHours(8);
+            // 将调整后的LocalDateTime转换回Timestamp
+            Timestamp adjustedTimestampTo = Timestamp.valueOf(adjustedDateTimeTo);
+
+            List<SecondaryCompareResult> res = secondaryComparisonDao.findByMultipleFields(
                     request.getChannelName(), request.getContractName(), request.getSequence(),
-                    request.getGenerationTimeFrom(), request.getGenerationTimeTo(),request.getType());
+                    adjustedTimestampFrom, adjustedTimestampTo, request.getType());
+            for (SecondaryCompareResult result : res) {
+                result.setGenerationTime(Timestamp.valueOf(result.getGenerationTime().toLocalDateTime().plusHours(8)));
+            }
             return new BaseResponse<>(res, "查询成功");
         } catch (Exception e) {
             return new BaseResponse<>(e.toString(), "查询失败");
@@ -181,19 +195,18 @@ public class SecondaryController {
     @ApiOperation("二级数据攻击后前端弹窗")
     public BaseResponse<Object> searchHack(@RequestBody @Valid SearchHackRequest request) {
         try {
-          Timestamp now = new Timestamp(System.currentTimeMillis());
-          Timestamp fiveSecondsAgo = new Timestamp(System.currentTimeMillis() - 5000);        
-          List<SecondaryCompareResult>  res = secondaryComparisonDao.findByStationAndTimeNative( fiveSecondsAgo, now);
-          List<SecondaryCompareResult> filteredResults = res.stream()
-    .filter(scr -> scr.getChannelName().contains(request.stationName))
-    .collect(Collectors.toList());
-          
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            Timestamp fiveSecondsAgo = new Timestamp(System.currentTimeMillis() - 5000);
+            List<SecondaryCompareResult> res = secondaryComparisonDao.findByStationAndTimeNative(fiveSecondsAgo, now);
+            List<SecondaryCompareResult> filteredResults = res.stream()
+                    .filter(scr -> scr.getChannelName().contains(request.stationName))
+                    .collect(Collectors.toList());
+
             return new BaseResponse<>(filteredResults, "查询成功");
         } catch (Exception e) {
             return new BaseResponse<>(e.toString(), "查询失败");
         }
 
     }
-
 
 }

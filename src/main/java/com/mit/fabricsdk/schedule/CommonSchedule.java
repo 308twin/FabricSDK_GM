@@ -2,7 +2,7 @@
  * @Author: LHD
  * @Date: 2023-12-19 13:54:39
  * @LastEditors: 308twin 790816436@qq.com
- * @LastEditTime: 2024-01-17 14:37:06
+ * @LastEditTime: 2024-02-29 17:01:57
  * @Description: 
  * 
  * Copyright (c) 2024 by 308twin@790816436@qq.com, All Rights Reserved. 
@@ -92,7 +92,7 @@ public class CommonSchedule {
      * @return {*}
      */    
     @Scheduled(fixedRate = 300000)
-    public void UpdateChannelInfo() throws InvalidArgumentException, ProposalException {
+    public void UpdateChannelInfo() throws Exception {
         logger.info("UpdateChannelInfo:Start");
         k8sBlockService.GenerateChannelInfo(null);
     }
